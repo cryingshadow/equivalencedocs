@@ -1,0 +1,41 @@
+plugins {
+    id 'application'
+    id 'eclipse'
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    extraLibs
+}
+
+dependencies {
+    extraLibs 'com.google.code.gson:gson:2.12.1'
+    extraLibs fileTree('libs') { include '*.jar' }
+    testImplementation 'org.testng:testng:7.7.1'
+    configurations.implementation.extendsFrom(configurations.extraLibs)
+}
+
+application {
+    mainClass = 'equivalencedocs.Main'
+}
+
+java {
+    sourceCompatibility = "1.21"
+    targetCompatibility = "1.21"
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': 'equivalencedocs.Main'
+    }
+    archiveBaseName = 'equivalencedocs'
+    from { configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
+tasks.named('test') {
+    useTestNG()
+}
