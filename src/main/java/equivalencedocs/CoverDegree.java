@@ -4,7 +4,7 @@ import java.util.*;
 
 public enum CoverDegree {
 
-    ALMOST_FULL(75, "fhdwlightgreen"),
+    ALMOST_FULL(70, "fhdwlightgreen"),
     BARELY(50, "fhdworange"),
     FULL(80, "fhdwdarkgreen"),
     MOSTLY(60, "fhdwyellow"),

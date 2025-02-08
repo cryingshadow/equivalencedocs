@@ -11,17 +11,25 @@ public class Main {
 
     private static final int CONNECTION_SLOT_WIDTH = 35;
 
-    private static final int CONNECTION_VERTICAL_PADDING = 2;
+    private static final int MODULE_INNER_HEIGHT = 13;
 
     private static final String MODULE_INNER_WIDTH = "5.5cm";
 
+    private static final String MODULE_OUTER_HEIGHT = "1.5";
+
     private static final String MODULE_OUTER_WIDTH = "5.7cm";
 
+    private static final String MODULE_RIGHT_SEP = "10";
+
     public static void main(final String[] args) throws IOException {
-        final List<Module> ownModules = Main.parseModules(new File(args[0]));
-        final List<Module> otherModules = Main.parseModules(new File(args[1]));
-        final List<Match> matches = Main.parseMatches(new File(args[2]));
-        Main.writeDocumentation(ownModules, otherModules, matches, new File(args[3]));
+        if (args == null || args.length != 5) {
+            System.out.println("Expected input: title, ownModules, foreignModules, matches, output");
+            return;
+        }
+        final List<Module> ownModules = Main.parseModules(new File(args[1]));
+        final List<Module> otherModules = Main.parseModules(new File(args[2]));
+        final List<Match> matches = Main.parseMatches(new File(args[3]));
+        Main.writeDocumentation(args[0], ownModules, otherModules, matches, new File(args[4]));
     }
 
     private static void drawConnection(
@@ -40,8 +48,10 @@ public class Main {
         currentNodeConnections.merge(connection.end(), 1, Integer::sum);
         final int leftConnectionCount = currentNodeConnections.get(leftNode);
         final int rightConnectionCount = currentNodeConnections.get(connection.end());
-        final int leftVerticalPadding = -leftConnectionCount * Main.CONNECTION_VERTICAL_PADDING;
-        final int rightVerticalPadding = -rightConnectionCount * Main.CONNECTION_VERTICAL_PADDING;
+        final int leftMaxCount = maxNodeConnections.get(leftNode);
+        final int rightMaxCount = maxNodeConnections.get(connection.end());
+        final int leftVerticalPadding = -Math.max(1, Main.MODULE_INNER_HEIGHT / leftMaxCount) * leftConnectionCount;
+        final int rightVerticalPadding = -Math.max(1, Main.MODULE_INNER_HEIGHT / rightMaxCount) * rightConnectionCount;
         writer.write("\\draw[->,thick] ($(n");
         writer.write(String.valueOf(leftNode));
         writer.write(")+(");
@@ -99,15 +109,12 @@ public class Main {
     }
 
     private static void writeDocumentation(
+        final String title,
         final List<Module> ownModules,
         final List<Module> otherModules,
         final List<Match> matches,
         final File output
     ) throws IOException {
-        final Map<Integer, Integer> idToNode = new LinkedHashMap<Integer, Integer>();
-        final Map<Integer, Integer> maxNodeConnections = new LinkedHashMap<Integer, Integer>();
-        final Map<Integer, Integer> currentNodeConnections = new LinkedHashMap<Integer, Integer>();
-        final List<Interval> verticalConnections = new ArrayList<Interval>();
         final Map<Integer, Integer> covered = new LinkedHashMap<Integer, Integer>();
         final Map<Integer, Integer> taken = new LinkedHashMap<Integer, Integer>();
         for (final Match match : matches) {
@@ -115,55 +122,11 @@ public class Main {
             taken.merge(match.otherID(), match.hours(), Integer::sum);
         }
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(output))) {
-            Main.writePreamble(writer);
-            writer.write("\\section{\\\"Ubersicht}\n\n");
-            writer.write("\\begin{center}\n");
-            writer.write("\\begin{tikzpicture}\n");
-            writer.write("\\coordinate (n0) at (0,0);\n");
-            int node = 1;
-            for (final Module module : ownModules) {
-                Main.writeModule(node, module, false, true, covered, taken, writer);
-                idToNode.put(module.id(), node);
-                maxNodeConnections.put(node, 2);
-                node++;
+            Main.writePreamble(title, writer);
+            Main.writeOverview(ownModules, otherModules, matches, covered, taken, writer);
+            for (final Module ownModule : ownModules) {
+                Main.writeModuleDetails(ownModule, otherModules, matches, covered.get(ownModule.id()), writer);
             }
-            boolean first = true;
-            for (final Module module : otherModules) {
-                Main.writeModule(node, module, first, false, covered, taken, writer);
-                if (first) {
-                    first = false;
-                }
-                idToNode.put(module.id(), node);
-                maxNodeConnections.put(node, 2);
-                node++;
-            }
-            final int numOfOwnModules = ownModules.size();
-            for (final Match match : matches) {
-                final int ownNode = idToNode.get(match.ownID());
-                final int otherNode = idToNode.get(match.otherID());
-                maxNodeConnections.merge(ownNode, 1, Integer::sum);
-                maxNodeConnections.merge(otherNode, 1, Integer::sum);
-                verticalConnections.add(new Interval(ownNode, otherNode - numOfOwnModules));
-            }
-            final Map<Integer, List<Interval>> slots = new LinkedHashMap<Integer, List<Interval>>();
-            Main.fillSlots(verticalConnections, slots);
-            final int maxSlot = slots.keySet().stream().max(Integer::compare).get();
-            for (final Map.Entry<Integer, List<Interval>> entry : slots.entrySet()) {
-                final int slot = entry.getKey();
-                for (final Interval connection : entry.getValue()) {
-                    Main.drawConnection(
-                        connection,
-                        slot,
-                        numOfOwnModules,
-                        maxSlot,
-                        currentNodeConnections,
-                        maxNodeConnections,
-                        writer
-                    );
-                }
-            }
-            writer.write("\\end{tikzpicture}\n");
-            writer.write("\\end{center}\n\n");
             writer.write("\\end{document}\n");
         }
     }
@@ -182,9 +145,13 @@ public class Main {
             writer.write("(n1) at (0,0);\n");
         } else {
             if (topRight) {
-                writer.write("[right=10 of n1");
+                writer.write("[right=");
+                writer.write(Main.MODULE_RIGHT_SEP);
+                writer.write(" of n1");
             } else {
-                writer.write("[below=1.5 of n");
+                writer.write("[below=");
+                writer.write(Main.MODULE_OUTER_HEIGHT);
+                writer.write(" of n");
                 writer.write(String.valueOf(node - 1));
             }
             writer.write("] (n");
@@ -203,7 +170,9 @@ public class Main {
         writer.write(String.valueOf(node));
         writer.write(") rectangle ++(");
         writer.write(Main.MODULE_OUTER_WIDTH);
-        writer.write(", -1.3cm);\n");
+        writer.write(", -");
+        writer.write(String.valueOf(Main.MODULE_INNER_HEIGHT));
+        writer.write("mm);\n");
         writer.write("\\node (t");
         writer.write(String.valueOf(node));
         writer.write(") [anchor=north west] at (n");
@@ -221,7 +190,97 @@ public class Main {
         writer.write(" Stunden}\\end{minipage}};\n");
     }
 
-    private static void writePreamble(final BufferedWriter writer) throws IOException {
+    private static void writeModuleDetails(
+        final Module ownModule,
+        final List<Module> otherModules,
+        final List<Match> matches,
+        final int covered,
+        final BufferedWriter writer
+    ) throws IOException {
+        writer.write("\\pagebreak\n\n");
+        writer.write("\\section{");
+        writer.write(ownModule.name());
+        writer.write("}\n\n");
+        writer.write("\\noindent Umfang: ");
+        writer.write(String.valueOf(ownModule.hours()));
+        writer.write(" Stunden, abgedeckt: ");
+        writer.write(String.valueOf(covered));
+        writer.write(" Stunden (");
+        writer.write(String.valueOf(covered * 100 / ownModule.hours()));
+        writer.write("\\%), modulverantwortlich: ");
+        writer.write(ownModule.responsible());
+        writer.write("\\\\[2ex]\n\n");
+        writer.write("\\noindent Kompetenzen:\\\\");
+        for (final String competency : ownModule.competencies()) {
+            writer.write(competency);
+            writer.write("\n\n");
+        }
+        // TODO Auto-generated method stub
+
+    }
+
+    private static void writeOverview(
+        final List<Module> ownModules,
+        final List<Module> otherModules,
+        final List<Match> matches,
+        final Map<Integer, Integer> covered,
+        final Map<Integer, Integer> taken,
+        final BufferedWriter writer
+    ) throws IOException {
+        final Map<Integer, Integer> idToNode = new LinkedHashMap<Integer, Integer>();
+        final Map<Integer, Integer> maxNodeConnections = new LinkedHashMap<Integer, Integer>();
+        final Map<Integer, Integer> currentNodeConnections = new LinkedHashMap<Integer, Integer>();
+        final List<Interval> verticalConnections = new ArrayList<Interval>();
+        writer.write("\\section{\\\"Ubersicht}\n\n");
+        writer.write("\\begin{center}\n");
+        writer.write("\\begin{tikzpicture}\n");
+        int node = 1;
+        for (final Module module : ownModules) {
+            Main.writeModule(node, module, false, true, covered, taken, writer);
+            idToNode.put(module.id(), node);
+            maxNodeConnections.put(node, 1);
+            node++;
+        }
+        boolean first = true;
+        for (final Module module : otherModules) {
+            Main.writeModule(node, module, first, false, covered, taken, writer);
+            if (first) {
+                first = false;
+            }
+            idToNode.put(module.id(), node);
+            maxNodeConnections.put(node, 1);
+            node++;
+        }
+        final int numOfOwnModules = ownModules.size();
+        for (final Match match : matches) {
+            final int ownNode = idToNode.get(match.ownID());
+            final int otherNode = idToNode.get(match.otherID());
+            maxNodeConnections.merge(ownNode, 1, Integer::sum);
+            maxNodeConnections.merge(otherNode - numOfOwnModules, 1, Integer::sum);
+            verticalConnections.add(new Interval(ownNode, otherNode - numOfOwnModules));
+        }
+        final Map<Integer, List<Interval>> slots = new LinkedHashMap<Integer, List<Interval>>();
+        Main.fillSlots(verticalConnections, slots);
+        final int maxSlot = slots.keySet().stream().max(Integer::compare).get();
+        for (final Map.Entry<Integer, List<Interval>> entry : slots.entrySet()) {
+            final int slot = entry.getKey();
+            for (final Interval connection : entry.getValue()) {
+                Main.drawConnection(
+                    connection,
+                    slot,
+                    numOfOwnModules,
+                    maxSlot,
+                    currentNodeConnections,
+                    maxNodeConnections,
+                    writer
+                );
+            }
+        }
+        writer.write("\\end{tikzpicture}\n");
+        writer.write("\\end{center}\n\n");
+    }
+
+    private static void writePreamble(final String title, final BufferedWriter writer) throws IOException {
         writer.write("\\documentclass{article}\n\n");
         writer.write("\\usepackage[ngerman]{babel}\n");
         writer.write("\\usepackage[T1]{fontenc}\n");
@@ -234,8 +293,13 @@ public class Main {
         writer.write("\\colorlet{fhdwyellow}{yellow}\n");
         writer.write("\\colorlet{fhdworange}{orange}\n");
         writer.write("\\colorlet{fhdwred}{red}\n\n");
-        writer.write("\\pagestyle{empty}\n\n");
+        writer.write("\\title{\\\"Aquivalenzpr\\\"ufung ");
+        writer.write(title);
+        writer.write("}\n\n");
         writer.write("\\begin{document}\n\n");
+        writer.write("\\maketitle\n\n");
+        writer.write("\\tableofcontents\n\n");
+        writer.write("\\pagebreak\n\n");
     }
 
 }
