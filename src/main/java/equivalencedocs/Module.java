@@ -7,7 +7,6 @@ public record Module(
     String name,
     boolean own,
     int hours,
-    CoverDegree covered,
     List<String> competencies,
     String responsible
 ) {}
