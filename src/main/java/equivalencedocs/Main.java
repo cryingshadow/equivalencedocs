@@ -209,11 +209,35 @@ public class Main {
         writer.write(String.valueOf(covered * 100 / ownModule.hours()));
         writer.write("\\%), modulverantwortlich: ");
         writer.write(ownModule.responsible());
-        writer.write("\\\\[2ex]\n\n");
-        writer.write("\\noindent Kompetenzen:\\\\");
+        writer.write("\n\n");
+        writer.write("\\subsection*{Kompetenzen}\n\n");
         for (final String competency : ownModule.competencies()) {
             writer.write(competency);
-            writer.write("\n\n");
+            writer.write("\n");
+        }
+        writer.write("\n\\subsection*{Abdeckung}\n\n");
+        for (final Match match : matches) {
+            if (match.ownID() != ownModule.id()) {
+                continue;
+            }
+            final Module otherModule =
+                otherModules.stream().filter(module -> module.id() == match.otherID()).findAny().get();
+            writer.write("\\subsubsection*{");
+            writer.write(otherModule.name());
+            writer.write("}\n\n");
+            writer.write("\\noindent Umfang: ");
+            writer.write(String.valueOf(match.hours()));
+            writer.write(" von ");
+            writer.write(String.valueOf(otherModule.hours()));
+            writer.write(" Stunden, Quelle: ");
+            writer.write(otherModule.responsible());
+            writer.write("\\\\\n\n");
+            writer.write("\\noindent \\textit{Kompetenzen:}\\\\\n");
+            for (final String competency : otherModule.competencies()) {
+                writer.write(competency);
+                writer.write("\n");
+            }
+            writer.write("\n");
         }
         // TODO Auto-generated method stub
 
