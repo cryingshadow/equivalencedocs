@@ -11,6 +11,15 @@ public enum CoverDegree {
     NOT(0, "fhdwred");
 
     public static CoverDegree forCoverPercentage(final int percentage) {
+        for (final CoverDegree degree : CoverDegree.getSortedDegrees()) {
+            if (degree.threshold <= percentage) {
+                return degree;
+            }
+        }
+        return NOT;
+    }
+
+    public static List<CoverDegree> getSortedDegrees() {
         final List<CoverDegree> degrees = new ArrayList<CoverDegree>(Arrays.stream(CoverDegree.values()).toList());
         Collections.sort(
             degrees,
@@ -23,12 +32,7 @@ public enum CoverDegree {
 
             }
         );
-        for (final CoverDegree degree : degrees) {
-            if (degree.threshold <= percentage) {
-                return degree;
-            }
-        }
-        return NOT;
+        return degrees;
     }
 
     public final String color;
