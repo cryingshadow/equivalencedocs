@@ -8,5 +8,6 @@ public record Module(
     boolean own,
     int hours,
     List<String> competencies,
-    String responsible
+    String responsible,
+    String checked
 ) {}
