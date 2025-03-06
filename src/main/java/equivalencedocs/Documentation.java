@@ -118,6 +118,8 @@ public class Documentation {
             );
         }
         this.writeDecision(writer);
+        writer.write("\\pagebreak\n\n");
+        writer.write("\\printbibliography[heading=bibintoc,title={Quellenverzeichnis}]\n\n");
         writer.write("\\end{document}\n");
     }
 
@@ -296,9 +298,9 @@ public class Documentation {
             writer.write(" von ");
             writer.write(String.valueOf(foreignModule.hours()));
             writer.write(" Stunden\\\\\n");
-            writer.write("Quelle: ");
+            writer.write("Quelle: \\cite{");
             writer.write(foreignModule.responsible());
-            writer.write("\\\\\n\n");
+            writer.write("}\\\\\n\n");
             writer.write("\\noindent \\textit{Kompetenzen:}\\\\\n");
             for (final String competency : foreignModule.competencies()) {
                 writer.write(competency);
@@ -366,6 +368,8 @@ public class Documentation {
         writer.write("\\usepackage[T1]{fontenc}\n");
         writer.write("\\usepackage[a4paper,margin=2cm]{geometry}\n");
         writer.write("\\usepackage{xcolor}\n");
+        writer.write("\\usepackage{biblatex}\n");
+        writer.write("\\addbibresource{references.bib}\n");
         writer.write("\\usepackage{tikz}\n");
         writer.write("\\usetikzlibrary{calc,positioning}\n\n");
         writer.write("\\colorlet{fhdwdarkgreen}{green!80!black}\n");
