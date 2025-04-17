@@ -9,5 +9,7 @@ public record Module(
     int hours,
     List<String> competencies,
     String responsible,
-    String checked
+    String checked,
+    String source,
+    String page
 ) {}

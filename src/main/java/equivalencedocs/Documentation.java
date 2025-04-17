@@ -306,7 +306,7 @@ public class Documentation {
             writer.write(String.valueOf(foreignModule.hours()));
             writer.write(" Stunden\\\\\n");
             writer.write("Quelle: \\cite{");
-            writer.write(foreignModule.responsible());
+            writer.write(foreignModule.source());
             writer.write("}\\\\\n\n");
             writer.write("\\noindent \\textit{Kompetenzen:}\\\\\n");
             for (final String competency : foreignModule.competencies()) {
