@@ -307,7 +307,13 @@ public class Documentation {
             writer.write(" Stunden\\\\\n");
             writer.write("Quelle: \\cite{");
             writer.write(foreignModule.source());
-            writer.write("}\\\\\n\n");
+            writer.write("}");
+            String page = foreignModule.page();
+            if (page != null && !page.isBlank()) {
+                writer.write(", ");
+                writer.write(page);
+            }
+            writer.write("\\\\\n\n");
             writer.write("\\noindent \\textit{Kompetenzen:}\\\\\n");
             for (final String competency : foreignModule.competencies()) {
                 writer.write(competency);
