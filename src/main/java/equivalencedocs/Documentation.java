@@ -2,6 +2,7 @@ package equivalencedocs;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.*;
 
 public class Documentation {
 
@@ -18,6 +19,10 @@ public class Documentation {
     private static final int MODULE_RIGHT_SEP_BIG = 14;
 
     private static final int MODULE_RIGHT_SEP_SMALL = 10;
+
+    private static String toString(final List<Source> sources) {
+        return sources.stream().map(Source::toString).collect(Collectors.joining(", "));
+    }
 
     private static void writeLegend(
         final int lowestNode,
@@ -284,6 +289,8 @@ public class Documentation {
             writer.write("modulverantwortlich: ");
             writer.write(ownModule.responsible());
         }
+        writer.write("\\\\Quelle: ");
+        writer.write(Documentation.toString(ownModule.sources()));
         writer.write("\n\n");
         writer.write("\\subsection*{Kompetenzen}\n\n");
         for (final String competency : ownModule.competencies()) {
@@ -305,14 +312,8 @@ public class Documentation {
             writer.write(" von ");
             writer.write(String.valueOf(foreignModule.hours()));
             writer.write(" Stunden\\\\\n");
-            writer.write("Quelle: \\cite{");
-            writer.write(foreignModule.source());
-            writer.write("}");
-            String page = foreignModule.page();
-            if (page != null && !page.isBlank()) {
-                writer.write(", ");
-                writer.write(page);
-            }
+            writer.write("Quelle: ");
+            writer.write(Documentation.toString(foreignModule.sources()));
             writer.write("\\\\\n\n");
             writer.write("\\noindent \\textit{Kompetenzen:}\\\\\n");
             for (final String competency : foreignModule.competencies()) {

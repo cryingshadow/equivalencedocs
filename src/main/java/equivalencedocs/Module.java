@@ -10,6 +10,5 @@ public record Module(
     List<String> competencies,
     String responsible,
     String checked,
-    String source,
-    String page
+    List<Source> sources
 ) {}
