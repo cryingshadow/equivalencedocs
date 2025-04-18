@@ -382,7 +382,11 @@ public class Documentation {
         writer.write("\\usepackage[T1]{fontenc}\n");
         writer.write("\\usepackage[a4paper,margin=2cm]{geometry}\n");
         writer.write("\\usepackage{xcolor}\n");
+        writer.write("\\usepackage[hyphens]{url}\n");
+        writer.write("\\usepackage{hyperref}\n");
         writer.write("\\usepackage{biblatex}\n");
+        writer.write("\\setcounter{biburllcpenalty}{7000}\n");
+        writer.write("\\setcounter{biburlucpenalty}{8000}\n");
         writer.write("\\addbibresource{references.bib}\n");
         writer.write("\\usepackage{tikz}\n");
         writer.write("\\usetikzlibrary{calc,positioning}\n\n");
