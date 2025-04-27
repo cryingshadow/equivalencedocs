@@ -2,4 +2,4 @@ package equivalencedocs;
 
 import java.util.*;
 
-public record Match(int ownID, int otherID, int hours, Map<Integer, Integer> competencyMatch) {}
+public record Match(String ownID, String otherID, int hours, Map<Integer, Integer> competencyMatch) {}

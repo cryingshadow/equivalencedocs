@@ -75,7 +75,7 @@ public class Documentation {
 
     private final List<String> comments;
 
-    private final Map<Integer, Integer> covered;
+    private final Map<String, Integer> covered;
 
     private final List<Module> foreignModules;
 
@@ -87,7 +87,7 @@ public class Documentation {
 
     private final String qualification;
 
-    private final Map<Integer, Integer> taken;
+    private final Map<String, Integer> taken;
 
     public Documentation(
         final String qualification,
@@ -103,8 +103,8 @@ public class Documentation {
         this.ownModules = ownModules;
         this.foreignModules = foreignModules;
         this.comments = comments;
-        this.covered = new LinkedHashMap<Integer, Integer>();
-        this.taken = new LinkedHashMap<Integer, Integer>();
+        this.covered = new LinkedHashMap<String, Integer>();
+        this.taken = new LinkedHashMap<String, Integer>();
         for (final Match match : matches) {
             this.covered.merge(match.ownID(), match.hours(), Integer::sum);
             this.taken.merge(match.otherID(), match.hours(), Integer::sum);
@@ -299,11 +299,11 @@ public class Documentation {
         }
         writer.write("\n\\subsection*{Abdeckung}\n\n");
         for (final Match match : this.matches) {
-            if (match.ownID() != ownModule.id()) {
+            if (!match.ownID().equals(ownModule.id())) {
                 continue;
             }
             final Module foreignModule =
-                this.foreignModules.stream().filter(module -> module.id() == match.otherID()).findAny().get();
+                this.foreignModules.stream().filter(module -> module.id().equals(match.otherID())).findAny().get();
             writer.write("\\subsubsection*{");
             writer.write(foreignModule.name());
             writer.write("}\n\n");
@@ -325,7 +325,7 @@ public class Documentation {
     }
 
     private void writeOverview(final BufferedWriter writer) throws IOException {
-        final Map<Integer, Integer> idToNode = new LinkedHashMap<Integer, Integer>();
+        final Map<String, Integer> idToNode = new LinkedHashMap<String, Integer>();
         final Map<Integer, Integer> maxNodeConnections = new LinkedHashMap<Integer, Integer>();
         final List<Interval> verticalConnections = new ArrayList<Interval>();
         final int numOfOwnModules = this.ownModules.size();
