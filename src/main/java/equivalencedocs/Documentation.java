@@ -77,6 +77,8 @@ public class Documentation {
 
     private final Map<String, Integer> covered;
 
+    private final DecisionList decisions;
+
     private final List<Module> foreignModules;
 
     private final String major;
@@ -95,7 +97,8 @@ public class Documentation {
         final List<String> comments,
         final List<Module> ownModules,
         final List<Module> foreignModules,
-        final List<Match> matches
+        final List<Match> matches,
+        final DecisionList decisions
     ) {
         this.qualification = qualification;
         this.major = major;
@@ -105,6 +108,7 @@ public class Documentation {
         this.comments = comments;
         this.covered = new LinkedHashMap<String, Integer>();
         this.taken = new LinkedHashMap<String, Integer>();
+        this.decisions = decisions;
         for (final Match match : matches) {
             this.covered.merge(match.ownID(), match.hours(), Integer::sum);
             this.taken.merge(match.otherID(), match.hours(), Integer::sum);
@@ -182,19 +186,56 @@ public class Documentation {
         writer.write(" f\\\"uhrt zur pauschalen Anrechnung der Module\n\n");
         writer.write("\\begin{center}\n");
         writer.write("\\renewcommand{\\arraystretch}{1.5}\n");
-        writer.write("\\begin{tabular}{|l|c|c|}\n");
+        writer.write("\\begin{tabular}{|l|c|c|c|c|}\n");
         writer.write("\\hline\n");
-        writer.write("\\textbf{Modul} & \\phantom{x}\\textbf{Ja}\\phantom{x} & \\textbf{Nein}\\\\\\hline\n");
+        writer.write(
+            "\\textbf{Modul} & \\textbf{Abdeckung} & \\phantom{x}\\textbf{Ja}\\phantom{x} & \\textbf{Nein} & \\textbf{Auflage}\\\\\\hline\n"
+        );
+        final Collection<String> recognized = new ArrayList<String>();
+        final Collection<String> needsRequirements = new ArrayList<String>();
+        for (final Decision decision : this.decisions.decisions()) {
+            if (decision.decision()) {
+                recognized.add(decision.module());
+                if (decision.requirements()) {
+                    needsRequirements.add(decision.module());
+                }
+            }
+        }
         for (final Module module : this.ownModules) {
             writer.write(module.name());
-            writer.write(" & & \\\\\\hline\n");
+            writer.write(" & ");
+            final int covered = this.covered.getOrDefault(module.id(), 0);
+            writer.write(String.valueOf(covered * 100 / module.hours()));
+            writer.write("\\% & ");
+            if (recognized.contains(module.id())) {
+                writer.write("X & ");
+            } else {
+                writer.write(" & X");
+            }
+            writer.write(" & ");
+            if (needsRequirements.contains(module.id())) {
+                writer.write("X");
+            }
+            writer.write("\\\\\\hline\n");
         }
         writer.write("\\end{tabular}\n");
         writer.write("\\renewcommand{\\arraystretch}{1}\n");
         writer.write("\\end{center}\n\n");
-        writer.write("\\noindent aus unseren Studiengang ");
+        writer.write("\\noindent aus unserem Studiengang ");
         writer.write(this.major);
         writer.write(" unter den folgenden Auflagen:\n\n");
+        if (this.decisions.requirements().isEmpty()) {
+            writer.write("\\vspace*{1ex}\n\n");
+            writer.write("keine\n\n");
+        } else {
+            writer.write("\\begin{itemize}\n");
+            for (final String requirement : this.decisions.requirements()) {
+                writer.write("\\item ");
+                writer.write(requirement);
+                writer.write("\n");
+            }
+            writer.write("\\end{itemize}\n\n");
+        }
         writer.write("\\vfill\n\n");
         writer.write("\\begin{tikzpicture}\n");
         writer.write("\\node (place) {Ort, Datum};\n");
