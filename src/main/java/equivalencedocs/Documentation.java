@@ -189,23 +189,24 @@ public class Documentation {
         writer.write("\\begin{tabular}{|l|c|c|c|c|}\n");
         writer.write("\\hline\n");
         writer.write(
-            "\\textbf{Modul} & \\textbf{Abdeckung} & \\phantom{x}\\textbf{Ja}\\phantom{x} & \\textbf{Nein} & \\textbf{Auflage}\\\\\\hline\n"
+            "\\textbf{Modul} & \\textbf{Abdeckung$^*$} & \\phantom{x}\\textbf{Ja}\\phantom{x} & \\textbf{Nein} & \\textbf{Auflage}\\\\\\hline\n"
         );
         final Collection<String> recognized = new ArrayList<String>();
-        final Collection<String> needsRequirements = new ArrayList<String>();
+        final Map<String, Integer> needsRequirements = new LinkedHashMap<String, Integer>();
         for (final Decision decision : this.decisions.decisions()) {
             if (decision.decision()) {
                 recognized.add(decision.module());
-                if (decision.requirements()) {
-                    needsRequirements.add(decision.module());
+                if (decision.requirements() > 0) {
+                    needsRequirements.put(decision.module(), decision.requirements());
                 }
             }
         }
         for (final Module module : this.ownModules) {
             writer.write(module.name());
             writer.write(" & ");
-            final int covered = this.covered.getOrDefault(module.id(), 0);
-            writer.write(String.valueOf(covered * 100 / module.hours()));
+            final int covered =
+                this.covered.getOrDefault(module.id(), 0) + needsRequirements.getOrDefault(module.id(), 0);
+            writer.write(String.valueOf(Math.min(covered * 100 / module.hours(), 100)));
             writer.write("\\% & ");
             if (recognized.contains(module.id())) {
                 writer.write("X & ");
@@ -213,7 +214,7 @@ public class Documentation {
                 writer.write(" & X");
             }
             writer.write(" & ");
-            if (needsRequirements.contains(module.id())) {
+            if (needsRequirements.containsKey(module.id())) {
                 writer.write("X");
             }
             writer.write("\\\\\\hline\n");
@@ -236,6 +237,8 @@ public class Documentation {
             }
             writer.write("\\end{itemize}\n\n");
         }
+        writer.write("\\noindent${}^*$ Die Abdeckung berücksichtigt sowohl die Abdeckungen aus den Lehreinheiten ");
+        writer.write("der Ausbildung als auch unsere Auflagen.\n\n");
         writer.write("\\vfill\n\n");
         writer.write("\\begin{tikzpicture}\n");
         writer.write("\\node (place) {Ort, Datum};\n");
